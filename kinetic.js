@@ -8990,7 +8990,7 @@ var Kinetic = {};
 
             // always call preventDefault for desktop events because some browsers
             // try to drag and drop the canvas element
-            if (evt.preventDefault) {
+            if (evt.preventDefault && !this.attrs.denyPreventDefault) {
                 evt.preventDefault();
             }
         },
@@ -9010,7 +9010,7 @@ var Kinetic = {};
 
             // always call preventDefault for desktop events because some browsers
             // try to drag and drop the canvas element
-            if (evt.preventDefault) {
+            if (evt.preventDefault && !this.attrs.denyPreventDefault) {
                 evt.preventDefault();
             }
         },
@@ -9058,7 +9058,7 @@ var Kinetic = {};
 
             // always call preventDefault for desktop events because some browsers
             // try to drag and drop the canvas element
-            if (evt.preventDefault) {
+            if (evt.preventDefault && !this.attrs.denyPreventDefault) {
                 evt.preventDefault();
             }
         },
