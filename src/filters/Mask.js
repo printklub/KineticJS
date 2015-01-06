@@ -34,7 +34,7 @@
 		var rgbv_se = pixelAt(idata, idata.width - 1, idata.height - 1);
 
 
-		var thres = threshold || 10; 
+		var thres = threshold || 10;
 		if (rgbDistance(rgbv_no, rgbv_ne) < thres && rgbDistance(rgbv_ne, rgbv_se) < thres && rgbDistance(rgbv_se, rgbv_so) < thres && rgbDistance(rgbv_so, rgbv_no) < thres) {
 
 			// Mean color
@@ -162,8 +162,13 @@
 	/**
 	 * Mask Filter
 	 * @function
+	 * @name Mask
 	 * @memberof Kinetic.Filters
 	 * @param {Object} imageData
+	 * @example
+     * node.cache();
+     * node.filters([Kinetic.Filters.Mask]);
+     * node.threshold(0.1);
 	 */
 	Kinetic.Filters.Mask = function(imageData) {
 		// Detect pixels close to the background color

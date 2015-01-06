@@ -1,7 +1,7 @@
 (function() {
     // constants
     var AUTO = 'auto',
-        CANVAS = 'canvas',
+        //CANVAS = 'canvas',
         CENTER = 'center',
         CHANGE_KINETIC = 'Change.kinetic',
         CONTEXT_2D = '2d',
@@ -18,11 +18,11 @@
         WORD = 'word',
         CHAR = 'char',
         NONE = 'none',
-        ATTR_CHANGE_LIST = ['fontFamily', 'fontSize', 'fontStyle', 'padding', 'align', 'lineHeight', 'text', 'width', 'height', 'wrap'],
+        ATTR_CHANGE_LIST = ['fontFamily', 'fontSize', 'fontStyle', 'fontVariant', 'padding', 'align', 'lineHeight', 'text', 'width', 'height', 'wrap'],
 
         // cached variables
         attrChangeListLen = ATTR_CHANGE_LIST.length,
-        dummyContext = document.createElement(CANVAS).getContext(CONTEXT_2D);
+        dummyContext = Kinetic.Util.createCanvasElement().getContext(CONTEXT_2D);
 
     /**
      * Text constructor
@@ -33,6 +33,7 @@
      * @param {String} [config.fontFamily] default is Arial
      * @param {Number} [config.fontSize] in pixels.  Default is 12
      * @param {String} [config.fontStyle] can be normal, bold, or italic.  Default is normal
+     * @param {String} [config.fontVariant] can be normal or small-caps.  Default is normal
      * @param {String} config.text
      * @param {String} [config.align] can be left, center, or right
      * @param {Number} [config.padding]
@@ -43,13 +44,13 @@
      * @@shapeParams
      * @@nodeParams
      * @example
-     * var text = new Kinetic.Text({<br>
-     *   x: 10,<br>
-     *   y: 15,<br>
-     *   text: 'Simple Text',<br>
-     *   fontSize: 30,<br>
-     *   fontFamily: 'Calibri',<br>
-     *   fill: 'green'<br>
+     * var text = new Kinetic.Text({
+     *   x: 10,
+     *   y: 15,
+     *   text: 'Simple Text',
+     *   fontSize: 30,
+     *   fontFamily: 'Calibri',
+     *   fill: 'green'
      * });
      */
     Kinetic.Text = function(config) {
@@ -193,7 +194,7 @@
             };
         },
         _getContextFont: function() {
-            return this.getFontStyle() + SPACE + this.getFontSize() + PX_SPACE + this.getFontFamily();
+            return this.getFontStyle() + SPACE + this.getFontVariant() + SPACE + this.getFontSize() + PX_SPACE + this.getFontFamily();
         },
         _addTextLine: function (line, width) {
             return this.textArr.push({text: line, width: width});
@@ -220,7 +221,7 @@
 
             this.textArr = [];
             dummyContext.save();
-            dummyContext.font = this.getFontStyle() + SPACE + fontSize + PX_SPACE + this.getFontFamily();
+            dummyContext.font = this._getContextFont();
             for (var i = 0, max = lines.length; i < max; ++i) {
                 var line = lines[i],
                     lineWidth = this._getTextWidth(line);
@@ -267,6 +268,7 @@
                                 }
                             }
                             this._addTextLine(match, matchWidth);
+                            textWidth = Math.max(textWidth, matchWidth);
                             currentHeightPx += lineHeightPx;
                             if (!shouldWrap ||
                                 (fixedHeight && currentHeightPx + lineHeightPx > maxHeightPx)) {
@@ -284,6 +286,7 @@
                                     // if it does, add the line and break out of the loop
                                     this._addTextLine(line, lineWidth);
                                     currentHeightPx += lineHeightPx;
+                                    textWidth = Math.max(textWidth, lineWidth);
                                     break;
                                 }
                             }
@@ -321,10 +324,10 @@
      * @param {String} fontFamily
      * @returns {String}
      * @example
-     * // get font family<br>
-     * var fontFamily = text.fontFamily();<br><br><br>
+     * // get font family
+     * var fontFamily = text.fontFamily();
      *
-     * // set font family<br>
+     * // set font family
      * text.fontFamily('Arial');
      */
 
@@ -338,10 +341,10 @@
      * @param {Number} fontSize
      * @returns {Number}
      * @example
-     * // get font size<br>
-     * var fontSize = text.fontSize();<br><br>
+     * // get font size
+     * var fontSize = text.fontSize();
      *
-     * // set font size to 22px<br>
+     * // set font size to 22px
      * text.fontSize(22);
      */
 
@@ -355,11 +358,28 @@
      * @param {String} fontStyle
      * @returns {String}
      * @example
-     * // get font style<br>
-     * var fontStyle = text.fontStyle();<br><br>
+     * // get font style
+     * var fontStyle = text.fontStyle();
      *
-     * // set font style<br>
+     * // set font style
      * text.fontStyle('bold');
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Text, 'fontVariant', NORMAL);
+
+    /**
+     * set font variant.  Can be 'normal' or 'small-caps'.  'normal' is the default.
+     * @name fontVariant
+     * @method
+     * @memberof Kinetic.Text.prototype
+     * @param {String} fontVariant
+     * @returns {String}
+     * @example
+     * // get font variant
+     * var fontVariant = text.fontVariant();
+     *
+     * // set font variant
+     * text.fontVariant('small-caps');
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Text, 'padding', 0);
@@ -372,10 +392,10 @@
      * @param {Number} padding
      * @returns {Number}
      * @example
-     * // get padding<br>
-     * var padding = text.padding();<br><br>
+     * // get padding
+     * var padding = text.padding();
      * 
-     * // set padding to 10 pixels<br>
+     * // set padding to 10 pixels
      * text.padding(10);
      */
 
@@ -389,13 +409,13 @@
      * @param {String} align
      * @returns {String}
      * @example
-     * // get text align<br>
-     * var align = text.align();<br><br>
+     * // get text align
+     * var align = text.align();
      *
-     * // center text<br>
-     * text.align('center');<br><br>
+     * // center text
+     * text.align('center');
      *
-     * // align text to right<br>
+     * // align text to right
      * text.align('right');
      */
 
@@ -409,10 +429,10 @@
      * @param {Number} lineHeight
      * @returns {Number}
      * @example 
-     * // get line height<br>
-     * var lineHeight = text.lineHeight();<br><br><br>
+     * // get line height
+     * var lineHeight = text.lineHeight();
      *
-     * // set the line height<br>
+     * // set the line height
      * text.lineHeight(2);
      */
 
@@ -426,10 +446,10 @@
      * @param {String} wrap
      * @returns {String}
      * @example
-     * // get wrap<br>
-     * var wrap = text.wrap();<br><br>
+     * // get wrap
+     * var wrap = text.wrap();
      *
-     * // set wrap<br>
+     * // set wrap
      * text.wrap('word');
      */
 
@@ -444,12 +464,12 @@
      * @param {String} text
      * @returns {String}
      * @example
-     * // get text<br>
-     * var text = text.text();<br><br>
+     * // get text
+     * var text = text.text();
      * 
-     * // set text<br>
+     * // set text
      * text.text('Hello world!');
      */
 
-     Kinetic.Collection.mapMethods(Kinetic.Text);
+    Kinetic.Collection.mapMethods(Kinetic.Text);
 })();

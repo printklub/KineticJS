@@ -765,6 +765,62 @@ suite('Container', function() {
     });
 
     // ======================================================
+    test('test find() selector by adding shapes with multiple names', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer({
+            name: 'layerName',
+            id: 'layerId'
+        });
+        var group = new Kinetic.Group({
+            name: 'groupName',
+            id: 'groupId'
+        });
+        var rect = new Kinetic.Rect({
+            x: 200,
+            y: 20,
+            width: 100,
+            height: 50,
+            fill: 'red',
+            name: 'red rectangle',
+            id: 'rectId'
+        });
+        var circle = new Kinetic.Circle({
+            x: 50,
+            y: 50,
+            radius: 20,
+            fill: 'red',
+            name: 'red circle',
+            id: 'circleId'
+        });
+
+        group.add(rect);
+        group.add(circle);
+        layer.add(group);
+        stage.add(layer);
+
+        assert.equal(stage.find('.rectangle')[0], rect, 'problem with shape name selector');
+        assert.equal(layer.find('.rectangle')[0], rect, 'problem with shape name selector');
+        assert.equal(group.find('.rectangle')[0], rect, 'problem with shape name selector');
+
+        assert.equal(stage.find('.circle')[0], circle, 'problem with shape name selector');
+        assert.equal(layer.find('.circle')[0], circle, 'problem with shape name selector');
+        assert.equal(group.find('.circle')[0], circle, 'problem with shape name selector');
+
+        assert.equal(stage.find('.red')[0], rect, 'problem with shape name selector');
+        assert.equal(stage.find('.red')[1], circle, 'problem with shape name selector');
+        assert.equal(layer.find('.red')[0], rect, 'problem with shape name selector');
+        assert.equal(layer.find('.red')[1], circle, 'problem with shape name selector');
+        assert.equal(group.find('.red')[0], rect, 'problem with shape name selector');
+        assert.equal(group.find('.red')[1], circle, 'problem with shape name selector');
+
+        assert.equal(stage.find('.groupName')[0], group, 'problem with group name selector');
+        assert.equal(layer.find('.groupName')[0], group, 'problem with group name selector');
+
+        assert.equal(stage.find('.layerName')[0], layer, 'problem with layer name selector');
+    });
+
+
+    // ======================================================
     test('test find() selector by adding shape, then group, then layer', function() {
         var stage = addStage();
         var layer = new Kinetic.Layer({
@@ -966,6 +1022,21 @@ suite('Container', function() {
         assert.equal(stage.find('#layerId')[0].attrs.id, 'layerId', 'problem with layer id selector');
 
         layer.draw();
+    });
+
+    // ======================================================
+    test('test findOne() selector by quering existing and non-existing nodes by name', function () {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+
+        var rect = new Kinetic.Rect({
+            name: 'rect'
+        });
+
+        layer.add(rect);
+
+        assert.equal(layer.findOne('.rect'), rect, 'findOne() on existing node must return a single node.');
+        assert.equal(layer.findOne('.doesNotExist'), undefined, 'findOne() on non-existing node must return undefined.');
     });
 
     // ======================================================
@@ -1353,6 +1424,106 @@ suite('Container', function() {
         assert.equal(greenGroup.getZIndex(), 0, 'green group should have zindex 0 after relayering');
 
         layer.draw();
+    });
+
+    // ======================================================
+    test('add and moveTo should work same way (depend on parent)', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        var greenGroup = new Kinetic.Group();
+        var blueGroup = new Kinetic.Group();
+
+        var bluecircle = new Kinetic.Circle({
+            x: 200,
+            y: stage.getHeight() / 2,
+            radius: 70,
+            fill: 'blue',
+            stroke: 'black',
+            strokeWidth: 4
+        });
+
+        bluecircle.moveTo(blueGroup);
+
+        layer.add(blueGroup);
+        layer.add(greenGroup);
+        stage.add(layer);
+
+        assert.equal(blueGroup.getChildren().length, 1, 'blue group should have only one children');
+        blueGroup.add(bluecircle);
+        assert.equal(blueGroup.getChildren().length, 1, 'blue group should have only one children after adding node twice');
+
+        greenGroup.add(bluecircle);
+        assert.equal(blueGroup.getChildren().length, 0, 'blue group should not have children');
+        assert.equal(greenGroup.getChildren().length, 1, 'green group should have only one children');
+
+
+
+        layer.draw();
+    });
+
+    // ======================================================
+    test('getChildren may use filter function', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        var group = new Kinetic.Group();
+
+        var circle1 = new Kinetic.Circle({
+            x: 200,
+            y: stage.getHeight() / 2,
+            radius: 70,
+            fill: 'blue',
+            stroke: 'black',
+            strokeWidth: 4
+        });
+        var circle2 = circle1.clone();
+        group.add(circle1).add(circle2);
+
+        var rect = new Kinetic.Rect({
+            name : 'test'
+        });
+        group.add(rect);
+
+        var circles = group.getChildren(function(node){
+            return node.getClassName() === 'Circle';
+        });
+        assert.equal(circles.length, 2, 'group has two circle children');
+        assert.equal(circles.indexOf(circle1) > -1, true);
+        assert.equal(circles.indexOf(circle2) > -1, true);
+
+        var testName = group.getChildren(function(node){
+            return node.name() === 'test';
+        });
+
+        assert.equal(testName.length, 1, 'group has one children with test name');
+
+        layer.add(group);
+
+        layer.draw();
+    });
+
+    test('add multiple nodes to container', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        var circle1 = new Kinetic.Circle({
+            x: 0,
+            y: 0,
+            radius: 10,
+            fill: 'red'
+        });
+        var circle2 = new Kinetic.Circle({
+            x: 0,
+            y: 0,
+            radius: 10,
+            fill: 'white'
+        });
+        var circle3 = new Kinetic.Circle({
+            x: 0,
+            y: 0,
+            radius: 10,
+            fill: 'blue'
+        });
+        layer.add(circle1, circle2, circle3);
+        assert.equal(layer.getChildren().length, 3, 'layer has exactly three children');
     });
 
 });

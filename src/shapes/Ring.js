@@ -13,12 +13,12 @@
      * @@shapeParams
      * @@nodeParams
      * @example
-     * var ring = new Kinetic.Ring({<br>
-     *   innerRadius: 40,<br>
-     *   outerRadius: 80,<br>
-     *   fill: 'red',<br>
-     *   stroke: 'black',<br>
-     *   strokeWidth: 5<br>
+     * var ring = new Kinetic.Ring({
+     *   innerRadius: 40,
+     *   outerRadius: 80,
+     *   fill: 'red',
+     *   stroke: 'black',
+     *   strokeWidth: 5
      * });
      */
     Kinetic.Ring = function(config) {
@@ -51,12 +51,21 @@
         // implements Shape.prototype.setWidth()
         setWidth: function(width) {
             Kinetic.Node.prototype.setWidth.call(this, width);
-            this.setOuterRadius(width / 2);
+            if (this.outerRadius() !== width / 2) {
+                this.setOuterRadius(width / 2);
+            }
         },
         // implements Shape.prototype.setHeight()
         setHeight: function(height) {
             Kinetic.Node.prototype.setHeight.call(this, height);
-            this.setOuterRadius(height / 2);
+            if (this.outerRadius() !== height / 2) {
+                this.setOuterRadius(height / 2);
+            }
+        },
+        setOuterRadius : function(val) {
+            this._setAttr('outerRadius', val);
+            this.setWidth(val * 2);
+            this.setHeight(val * 2);
         }
     };
     Kinetic.Util.extend(Kinetic.Ring, Kinetic.Shape);
@@ -72,14 +81,15 @@
      * @param {Number} innerRadius
      * @returns {Number}
      * @example
-     * // get inner radius<br>
-     * var innerRadius = ring.innerRadius();<br><br>
+     * // get inner radius
+     * var innerRadius = ring.innerRadius();
      *
-     * // set inner radius<br>
+     * // set inner radius
      * ring.innerRadius(20);
      */
      
-    Kinetic.Factory.addGetterSetter(Kinetic.Ring, 'outerRadius', 0);
+    Kinetic.Factory.addGetter(Kinetic.Ring, 'outerRadius', 0);
+    Kinetic.Factory.addOverloadedGetterSetter(Kinetic.Ring, 'outerRadius');
 
     /**
      * get/set outerRadius
@@ -89,12 +99,12 @@
      * @param {Number} outerRadius
      * @returns {Number}
      * @example
-     * // get outer radius<br>
-     * var outerRadius = ring.outerRadius();<br><br>
+     * // get outer radius
+     * var outerRadius = ring.outerRadius();
      *
-     * // set outer radius<br>
+     * // set outer radius
      * ring.outerRadius(20);
      */
 
-     Kinetic.Collection.mapMethods(Kinetic.Ring);
+    Kinetic.Collection.mapMethods(Kinetic.Ring);
 })();

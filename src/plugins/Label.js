@@ -20,34 +20,34 @@
      * @@nodeParams
      * @example
      * // create label
-     * var label = new Kinetic.Label({<br>
-     *   x: 100,<br>
-     *   y: 100, <br>
-     *   draggable: true<br>
-     * });<br><br>
+     * var label = new Kinetic.Label({
+     *   x: 100,
+     *   y: 100, 
+     *   draggable: true
+     * });
      *
-     * // add a tag to the label<br>
-     * label.add(new Kinetic.Tag({<br>
-     *   fill: '#bbb',<br>
-     *   stroke: '#333',<br>
-     *   shadowColor: 'black',<br>
-     *   shadowBlur: 10,<br>
-     *   shadowOffset: [10, 10],<br>
-     *   shadowOpacity: 0.2,<br>
-     *   lineJoin: 'round',<br>
-     *   pointerDirection: 'up',<br>
-     *   pointerWidth: 20,<br>
-     *   pointerHeight: 20,<br>
-     *   cornerRadius: 5<br>
-     * }));<br><br>
+     * // add a tag to the label
+     * label.add(new Kinetic.Tag({
+     *   fill: '#bbb',
+     *   stroke: '#333',
+     *   shadowColor: 'black',
+     *   shadowBlur: 10,
+     *   shadowOffset: [10, 10],
+     *   shadowOpacity: 0.2,
+     *   lineJoin: 'round',
+     *   pointerDirection: 'up',
+     *   pointerWidth: 20,
+     *   pointerHeight: 20,
+     *   cornerRadius: 5
+     * }));
      *
-     * // add text to the label<br>
-     * label.add(new Kinetic.Text({<br>
-     *   text: 'Hello World!',<br>
-     *   fontSize: 50,<br>
-     *   lineHeight: 1.2,<br>
-     *   padding: 10,<br>
-     *   fill: 'green'<br>
+     * // add text to the label
+     * label.add(new Kinetic.Text({
+     *   text: 'Hello World!',
+     *   fontSize: 50,
+     *   lineHeight: 1.2,
+     *   padding: 10,
+     *   fill: 'green'
      *  }));
      */
     Kinetic.Label = function(config) {
@@ -58,9 +58,9 @@
         ____init: function(config) {
             var that = this;
 
-            this.className = LABEL;
             Kinetic.Group.call(this, config);
-
+            this.className = LABEL;
+            
             this.on('add.kinetic', function(evt) {
                 that._addListeners(evt.child);
                 that._sync();
@@ -107,15 +107,15 @@
         _sync: function() {
             var text = this.getText(),
                 tag = this.getTag(),
-                width, height, pointerDirection, pointerWidth, x, y;
+                width, height, pointerDirection, pointerWidth, x, y, pointerHeight;
 
             if (text && tag) {
-                width = text.getWidth(),
-                height = text.getHeight(),
-                pointerDirection = tag.getPointerDirection(),
-                pointerWidth = tag.getPointerWidth(),
-                pointerHeight = tag.getPointerHeight(),
-                x = 0,
+                width = text.getWidth();
+                height = text.getHeight();
+                pointerDirection = tag.getPointerDirection();
+                pointerWidth = tag.getPointerWidth();
+                pointerHeight = tag.getPointerHeight();
+                x = 0;
                 y = 0;
 
                 switch(pointerDirection) {
@@ -195,28 +195,48 @@
                 context.lineTo((width + pointerWidth)/2, 0);
             }
 
-            context.lineTo(width, 0);
-
+            if(!cornerRadius) {
+                context.lineTo(width, 0);
+            } else {
+                context.lineTo(width - cornerRadius, 0);
+                context.arc(width - cornerRadius, cornerRadius, cornerRadius, Math.PI * 3 / 2, 0, false);
+            }
+            
             if (pointerDirection === RIGHT) {
                 context.lineTo(width, (height - pointerHeight)/2);
                 context.lineTo(width + pointerWidth, height/2);
                 context.lineTo(width, (height + pointerHeight)/2);
             }
-
-            context.lineTo(width, height);
+            
+            if(!cornerRadius) {
+                context.lineTo(width, height);
+            } else {
+                context.lineTo(width, height - cornerRadius);
+                context.arc(width - cornerRadius, height - cornerRadius, cornerRadius, 0, Math.PI / 2, false);
+            }
 
             if (pointerDirection === DOWN) {
                 context.lineTo((width + pointerWidth)/2, height);
                 context.lineTo(width/2, height + pointerHeight);
                 context.lineTo((width - pointerWidth)/2, height);
             }
-
-            context.lineTo(0, height);
+            
+            if(!cornerRadius) {
+                context.lineTo(0, height);
+            } else {
+                context.lineTo(cornerRadius, height);
+                context.arc(cornerRadius, height - cornerRadius, cornerRadius, Math.PI / 2, Math.PI, false);
+            }
 
             if (pointerDirection === LEFT) {
                 context.lineTo(0, (height + pointerHeight)/2);
                 context.lineTo(-1 * pointerWidth, height/2);
                 context.lineTo(0, (height - pointerHeight)/2);
+            }
+            
+            if(cornerRadius) {
+                context.lineTo(0, cornerRadius);
+                context.arc(cornerRadius, cornerRadius, cornerRadius, Math.PI, Math.PI * 3 / 2, false);
             }
 
             context.closePath();
@@ -294,5 +314,5 @@
      * @memberof Kinetic.Tag.prototype
      */
 
-     Kinetic.Collection.mapMethods(Kinetic.Tag);
+    Kinetic.Collection.mapMethods(Kinetic.Tag);
 })();

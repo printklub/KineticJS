@@ -1,3 +1,4 @@
+
 /*
  * KineticJS JavaScript Framework v@@version
  * http://www.kineticjs.com/
@@ -28,8 +29,11 @@
 /**
  * @namespace Kinetic
  */
+/*jshint -W079, -W020*/
 var Kinetic = {};
-(function() {
+(function(root) {
+    var PI_OVER_180 = Math.PI / 180;
+
     Kinetic = {
         // public
         version: '@@version',
@@ -47,24 +51,48 @@ var Kinetic = {};
         enableTrace: false,
         traceArrMax: 100,
         dblClickWindow: 400,
+        /**
+         * Global pixel ratio configuration. KineticJS automatically detect pixel ratio of current device.
+         * But you may override such property, if you want to use your value.
+         * @property pixelRatio
+         * @default undefined
+         * @memberof Kinetic
+         * @example
+         * Kinetic.pixelRatio = 1;
+         */
         pixelRatio: undefined,
+        /**
+         * Drag distance property. If you start to drag a node you may want to wait until pointer is moved to some distance from start point,
+         * only then start dragging.
+         * @property dragDistance
+         * @default 0
+         * @memberof Kinetic
+         * @example
+         * Kinetic.dragDistance = 10;
+         */
+        dragDistance : 0,
+        /**
+         * Use degree values for angle properties. You may set this property to false if you want to use radiant values.
+         * @property angleDeg
+         * @default true
+         * @memberof Kinetic
+         * @example
+         * node.rotation(45); // 45 degrees
+         * Kinetic.angleDeg = false;
+         * node.rotation(Math.PI / 2); // PI/2 radian
+         */
+        angleDeg: true,
+         /**
+         * Show different warnings about errors or wrong API usage
+         * @property showWarnings
+         * @default true
+         * @memberof Kinetic
+         * @example
+         * Kinetic.showWarnings = false;
+         */
+        showWarnings : true,
 
-        // user agent  
-        UA: (function() {
-            var ua = navigator.userAgent.toLowerCase(),
-                // jQuery UA regex
-                match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
-                /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
-                /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
-                /(msie) ([\w.]+)/.exec( ua ) ||
-                ua.indexOf("compatible") < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
-                [];
 
-            return {
-                browser: match[ 1 ] || '',
-                version: match[ 2 ] || '0'
-            };
-        })(),
 
         /**
          * @namespace Filters
@@ -95,19 +123,19 @@ var Kinetic = {};
          * @@shapeParams
          * @@nodeParams
          * @example
-         * var customShape = new Kinetic.Shape({<br>
-         *   x: 5,<br>
-         *   y: 10,<br>
-         *   fill: 'red',<br>
-         *   // a Kinetic.Canvas renderer is passed into the drawFunc function<br>
-         *   drawFunc: function(context) {<br>
-         *     context.beginPath();<br>
-         *     context.moveTo(200, 50);<br>
-         *     context.lineTo(420, 80);<br>
-         *     context.quadraticCurveTo(300, 100, 260, 170);<br>
-         *     context.closePath();<br>
-         *     context.fillStrokeShape(this);<br>
-         *   }<br>
+         * var customShape = new Kinetic.Shape({
+         *   x: 5,
+         *   y: 10,
+         *   fill: 'red',
+         *   // a Kinetic.Canvas renderer is passed into the drawFunc function
+         *   drawFunc: function(context) {
+         *     context.beginPath();
+         *     context.moveTo(200, 50);
+         *     context.lineTo(420, 80);
+         *     context.quadraticCurveTo(300, 100, 260, 170);
+         *     context.closePath();
+         *     context.fillStrokeShape(this);
+         *   }
          *});
          */
         Shape: function(config) {
@@ -134,14 +162,13 @@ var Kinetic = {};
          * @memberof Kinetic
          * @augments Kinetic.Container
          * @param {Object} config
-         * @param {String|DomElement} config.container Container id or DOM element
+         * @param {String|Element} config.container Container id or DOM element
          * @@nodeParams
-         * @@containerParams
          * @example
-         * var stage = new Kinetic.Stage({<br>
-         *   width: 500,<br>
-         *   height: 800,<br>
-         *   container: 'containerId'<br>
+         * var stage = new Kinetic.Stage({
+         *   width: 500,
+         *   height: 800,
+         *   container: 'containerId'
          * });
          */
         Stage: function(config) {
@@ -149,8 +176,7 @@ var Kinetic = {};
         },
 
         /**
-         * Layer constructor.  Layers are tied to their own canvas element and are used
-         * to contain groups or shapes
+         * BaseLayer constructor. 
          * @constructor
          * @memberof Kinetic
          * @augments Kinetic.Container
@@ -162,8 +188,49 @@ var Kinetic = {};
          * @example
          * var layer = new Kinetic.Layer();
          */
-        Layer: function(config) {
+        BaseLayer: function(config) {
             this.___init(config);
+        },
+
+        /**
+         * Layer constructor.  Layers are tied to their own canvas element and are used
+         * to contain groups or shapes.
+         * @constructor
+         * @memberof Kinetic
+         * @augments Kinetic.BaseLayer
+         * @param {Object} config
+         * @param {Boolean} [config.clearBeforeDraw] set this property to false if you don't want
+         * to clear the canvas before each layer draw.  The default value is true.
+         * @@nodeParams
+         * @@containerParams
+         * @example
+         * var layer = new Kinetic.Layer();
+         */
+        Layer: function(config) {
+            this.____init(config);
+        },
+
+        /**
+         * FastLayer constructor. Layers are tied to their own canvas element and are used
+         * to contain shapes only.  If you don't need node nesting, mouse and touch interactions,
+         * or event pub/sub, you should use FastLayer instead of Layer to create your layers.
+         * It renders about 2x faster than normal layers.
+         * @constructor
+         * @memberof Kinetic
+         * @augments Kinetic.BaseLayer
+         * @param {Object} config
+         * @param {Boolean} [config.clearBeforeDraw] set this property to false if you don't want
+         * to clear the canvas before each layer draw.  The default value is true.
+         * @param {Boolean} [config.visible]
+         * @param {String} [config.id] unique id
+         * @param {String} [config.name] non-unique name
+         * @param {Number} [config.opacity] determines node opacity.  Can be any number between 0 and 1
+         * @@containerParams
+         * @example
+         * var layer = new Kinetic.FastLayer();
+         */
+        FastLayer: function(config) {
+            this.____init(config);
         },
 
         /**
@@ -191,12 +258,10 @@ var Kinetic = {};
 
             // if DD is not included with the build, then
             // drag and drop is not even possible
-            if (!dd) {
-                return false;
-            }
-            // if DD is included with the build
-            else {
+            if (dd) {
                 return dd.isDragging;
+            } else {
+                return false;
             }
         },
         /**
@@ -210,12 +275,10 @@ var Kinetic = {};
 
             // if DD is not included with the build, then
             // drag and drop is not even possible
-            if (!dd) {
-                return false;
-            }
-            // if DD is included with the build
-            else {
+            if (dd) {
                 return !!dd.node;
+            } else {
+                return false;
             }
         },
         _addId: function(node, id) {
@@ -230,10 +293,15 @@ var Kinetic = {};
         },
         _addName: function(node, name) {
             if(name !== undefined) {
-                if(this.names[name] === undefined) {
-                    this.names[name] = [];
+                var names = name.split(/\W+/g);
+                for(var n = 0; n < names.length; n++) {
+                    if (names[n]) {
+                        if(this.names[names[n]] === undefined) {
+                            this.names[names[n]] = [];
+                        }
+                        this.names[names[n]].push(node);
+                    }
                 }
-                this.names[name].push(node);
             }
         },
         _removeName: function(name, _id) {
@@ -251,9 +319,40 @@ var Kinetic = {};
                     }
                 }
             }
-        }
+        },
+        getAngle: function(angle) {
+            return this.angleDeg ? angle * PI_OVER_180 : angle;
+        },
+        _parseUA: function(userAgent) {
+            var ua = userAgent.toLowerCase(),
+                // jQuery UA regex
+                match = /(chrome)[ \/]([\w.]+)/.exec( ua ) ||
+                /(webkit)[ \/]([\w.]+)/.exec( ua ) ||
+                /(opera)(?:.*version|)[ \/]([\w.]+)/.exec( ua ) ||
+                /(msie) ([\w.]+)/.exec( ua ) ||
+                ua.indexOf('compatible') < 0 && /(mozilla)(?:.*? rv:([\w.]+)|)/.exec( ua ) ||
+                [],
+
+                // adding mobile flag as well
+                mobile = !!(userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)),
+                ieMobile = !!(userAgent.match(/IEMobile/i));
+                
+            return {
+                browser: match[ 1 ] || '',
+                version: match[ 2 ] || '0',
+
+                // adding mobile flab
+                mobile: mobile,
+                ieMobile: ieMobile  // If this is true (i.e., WP8), then Kinetic touch events are executed instead of equivalent Kinetic mouse events
+            };
+        },
+        // user agent  
+        UA: undefined
     };
-})();
+
+    Kinetic.UA = Kinetic._parseUA((root.navigator && root.navigator.userAgent) || '');
+    
+})(this);
 
 // Uses Node, AMD or browser globals to create a module.
 
@@ -274,19 +373,36 @@ var Kinetic = {};
 // if the module has no dependencies, the above pattern can be simplified to
 ( function(root, factory) {
     if( typeof exports === 'object') {
-        // Node. Does not work with strict CommonJS, but
-        // only CommonJS-like enviroments that support module.exports,
-        // like Node.
-        module.exports = factory();
+        var KineticJS = factory();
+        // runtime-check for browserify
+        if(global.window === global) {
+            Kinetic.document = global.document;
+            Kinetic.window = global;
+        } else {
+            // Node. Does not work with strict CommonJS, but
+            // only CommonJS-like enviroments that support module.exports,
+            // like Node.
+            var Canvas = require('canvas');
+            var jsdom = require('jsdom').jsdom;
+
+            Kinetic.document = jsdom('<!DOCTYPE html><html><head></head><body></body></html>');
+            Kinetic.window = Kinetic.document.createWindow();
+            Kinetic.window.Image = Canvas.Image;
+            Kinetic._nodeCanvas = Canvas;
+        }
+
+        Kinetic.root = root;
+        module.exports = KineticJS;
+        return;
     }
     else if( typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(factory);
     }
-    else {
-        // Browser globals (root is window)
-        root.returnExports = factory();
-    }
+    Kinetic.document = document;
+    Kinetic.window = window;
+    Kinetic.root = root;
+
 }(this, function() {
 
     // Just return a value to define the module export.

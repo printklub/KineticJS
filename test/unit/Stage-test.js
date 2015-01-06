@@ -2,7 +2,7 @@ suite('Stage', function() {
 
     // ======================================================
     test('instantiate stage with id', function() {
-      var container = document.createElement('div');
+      var container = Kinetic.document.createElement('div');
       container.id = 'container';
 
       kineticContainer.appendChild(container);
@@ -21,7 +21,7 @@ suite('Stage', function() {
 
     // ======================================================
     test('test stage buffer canvas and hit buffer canvas', function() {
-      var container = document.createElement('div');
+      var container = Kinetic.document.createElement('div');
       container.id = 'container';
 
       kineticContainer.appendChild(container);
@@ -45,7 +45,7 @@ suite('Stage', function() {
 
     // ======================================================
     test('instantiate stage with dom element', function() {
-      var container = document.createElement('div');
+      var container = Kinetic.document.createElement('div');
 
       kineticContainer.appendChild(container);
 
@@ -58,8 +58,8 @@ suite('Stage', function() {
 
     // ======================================================
     test('stage instantiation should clear container', function() {
-        var container = document.createElement('div');
-        var dummy = document.createElement('p');
+        var container = Kinetic.document.createElement('div');
+        var dummy = Kinetic.document.createElement('p');
         
         container.appendChild(dummy);
         kineticContainer.appendChild(container);
@@ -71,6 +71,19 @@ suite('Stage', function() {
         });
 
         assert.equal(container.getElementsByTagName('p').length, 0, 'container should have no p tags');
+    });
+
+    // ======================================================
+    test('test stage cloning', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        stage.add(layer);
+
+        var stageClone = stage.clone();
+        assert.notEqual(stage.getContainer(), stageClone.getContainer(), 'clone should be in different container');
+
+        assert.equal(stage.getContainer().childNodes[0].childNodes.length, 1, 'container should not have changes');
+
     });
 
     // ======================================================
@@ -365,7 +378,7 @@ suite('Stage', function() {
 
     // ======================================================
     test('destroy stage', function() {
-        var container = document.createElement('div');
+        var container = Kinetic.document.createElement('div');
 
         kineticContainer.appendChild(container);
 
@@ -403,6 +416,7 @@ suite('Stage', function() {
         assert.equal(Kinetic.names.stageFalconName, undefined, 'stage should no longer be in names map');
         assert.equal(Kinetic.ids.circleFalconId, undefined, 'circle should no longer be in ids map');
         assert.equal(Kinetic.names.circleFalconName, undefined, 'circle should no longer be in names map');
+        assert.equal(Kinetic.stages.indexOf(stage) === -1, true, 'stage should not be in stages array');
 
 
     });
@@ -428,4 +442,79 @@ suite('Stage', function() {
         //console.log(stage.getStage());
     });
 
+    test('add multiple layers to stage', function() {
+        var stage = addStage();
+        var layer1 = new Kinetic.Layer();
+        var layer2 = new Kinetic.Layer();
+        var layer3 = new Kinetic.Layer();
+        stage.add(layer1, layer2, layer3);
+        assert.equal(stage.getLayers().length, 3, 'stage has exactly three layers');
+    });
+    // ======================================================
+    test('test drag and click', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        var rect = new Kinetic.Rect({
+            x: 50,
+            y: 50,
+            width: 50,
+            height: 50,
+            fill: 'red',
+            draggable: true
+        });
+
+        layer.add(rect);
+        stage.add(layer);
+
+        rect.on('dblclick', function() {
+            assert(false, 'double click fired');
+        });
+
+        var top = stage.content.getBoundingClientRect().top,
+            clientY = 60 + top;
+
+        // simulate dragging
+        stage._mousedown({
+            clientX: 60,
+            clientY: clientY
+        });
+
+        stage._mousemove({
+            clientX: 61,
+            clientY: clientY
+        });
+
+        stage._mousemove({
+            clientX: 62,
+            clientY: clientY
+        });
+
+        stage._mousemove({
+            clientX: 63,
+            clientY: clientY
+        });
+
+        stage._mousemove({
+            clientX: 64,
+            clientY: clientY
+        });
+
+        Kinetic.DD._endDragBefore();
+        stage._mouseup({
+            clientX: 65,
+            clientY: clientY
+        });
+        Kinetic.DD._endDragAfter({dragEndNode:rect});
+
+        // simulate click
+        stage._mousedown({
+            clientX: 66,
+            clientY: clientY
+        });
+
+        stage._mouseup({
+            clientX: 66,
+            clientY: clientY
+        });
+    })
 });

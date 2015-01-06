@@ -131,6 +131,10 @@ suite('Shape', function() {
         shape.setShadowOpacity(0.5);
 
         assert.equal(shape.hasShadow(), true, 'shape should have a shadow because opacity is nonzero');
+
+        shape.setShadowEnabled(false);
+
+        assert.equal(shape.hasShadow(), false, 'shape should not have a shadow because it is not enabled');
     });
 
     // ======================================================
@@ -340,7 +344,7 @@ suite('Shape', function() {
         layer.draw();
         var trace = layer.getContext().getTrace();
         //console.log(trace);
-        assert.equal(trace, 'clearRect(0,0,578,200);save();save();shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();clearRect(0,0,578,200);save();save();shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();');
+        assert.equal(trace, 'clearRect(0,0,578,200);save();save();globalAlpha=1;shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();clearRect(0,0,578,200);save();save();globalAlpha=1;shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();');
 
         circle.fillEnabled(false);
         assert.equal(circle.getFillEnabled(), false, 'fillEnabled should be false');
@@ -466,6 +470,29 @@ suite('Shape', function() {
     assert.equal(trace, 'clearRect(0,0,578,200);save();save();globalAlpha=0.25;shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();globalAlpha=0.5;drawImage([object HTMLCanvasElement],0,0);restore();');
 
   });
+
+    // ======================================================
+    test('shape intersect with shadow', function(){
+        var stage = addStage();
+
+        var layer = new Kinetic.Layer();
+
+        var rect = new Kinetic.Rect({
+            fill: '#ff0000',
+            x: 50,
+            y: 50,
+            width: 200,
+            height: 200,
+            draggable: true,
+            shadowColor: '#000' // if all shadow properties removed, works fine
+        });
+        layer.add(rect);
+        stage.add(layer);
+
+        //error here
+        assert.equal(rect.intersects({x:52,y:52}), true);
+        assert.equal(rect.intersects({x:45,y:45}), false);
+    });
 
   // ======================================================
   test('overloaded getters and setters', function(){
@@ -620,5 +647,46 @@ suite('Shape', function() {
     assert.equal(shape.fillRadialGradientEndPointY(), 0);
     assert.equal(shape.fillPatternRotation(), 0);
   });
+    
+    // ======================================================
+    test.skip('hit graph when shape cached before adding to Layer', function() {
+        var stage = addStage();
+        var layer = new Kinetic.Layer();
+        var rect = new Kinetic.Rect({
+            x: 290,
+            y: 111,
+            width : 50,
+            height : 50,
+            fill : 'black'
+        });
+        rect.cache();
 
+        var click = false;
+
+        rect.on('click', function() {
+            click = true;
+        });
+
+        layer.add(rect);
+        stage.add(layer);
+
+        var top = stage.content.getBoundingClientRect().top;
+
+        showHit(layer);
+
+        stage._mousedown({
+            clientX: 300,
+            clientY: 120 + top
+        });
+
+        Kinetic.DD._endDragBefore();
+        stage._mouseup({
+            clientX: 300,
+            clientY: 120 + top
+        });
+        Kinetic.DD._endDragAfter({dragEndNode:rect});
+
+        //TODO: can't get this to pass
+        assert.equal(click, true, 'click event should have been fired when mousing down and then up on rect');
+    });
 });

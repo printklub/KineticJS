@@ -26,12 +26,16 @@
 
 
     Kinetic.Util.addMethods(Kinetic.Layer, {
-        ___init: function(config) {
+        ____init: function(config) {
             this.nodeType = 'Layer';
             this.canvas = new Kinetic.SceneCanvas();
             this.hitCanvas = new Kinetic.HitCanvas();
             // call super constructor
-            Kinetic.Container.call(this, config);
+            Kinetic.BaseLayer.call(this, config);
+        },
+        _setCanvasSize: function(width, height) {
+            this.canvas.setSize(width, height);
+            this.hitCanvas.setSize(width, height);
         },
         _validateAdd: function(child) {
             var type = child.getType();
@@ -52,28 +56,58 @@
         getIntersection: function(pos) {
             var obj, i, intersectionOffset, shape;
 
-            if(this.isVisible()) {
-                for (i=0; i<INTERSECTION_OFFSETS_LEN; i++) {
-                    intersectionOffset = INTERSECTION_OFFSETS[i];
-                    obj = this._getIntersection({
-                        x: pos.x + intersectionOffset.x,
-                        y: pos.y + intersectionOffset.y
-                    });
-                    shape = obj.shape;
-                    if (shape) {
-                        return shape;
+            if(this.hitGraphEnabled() && this.isVisible()) {
+                // in some cases antialiased area may be bigger than 1px
+                // it is possible if we will cache node, then scale it a lot
+                // TODO: check { 0; 0 } point before loop, and remove it from INTERSECTION_OFFSETS.
+                var spiralSearchDistance = 1;
+                var continueSearch = false;
+                while (true) {
+                    for (i=0; i<INTERSECTION_OFFSETS_LEN; i++) {
+                        intersectionOffset = INTERSECTION_OFFSETS[i];
+                        obj = this._getIntersection({
+                            x: pos.x + intersectionOffset.x * spiralSearchDistance,
+                            y: pos.y + intersectionOffset.y * spiralSearchDistance
+                        });
+                        shape = obj.shape;
+                        if (shape) {
+                            return shape;
+                        }
+                        // we should continue search if we found antialiased pixel
+                        // that means our node somewhere very close
+                        else if (obj.antialiased) {
+                            continueSearch = true;
+                        }
                     }
-                    else if (!obj.antialiased) {
-                        return null;
+                    // if no shape, and no antialiased pixel, we should end searching 
+                    if (continueSearch) {
+                        spiralSearchDistance += 1;
+                    } else {
+                        return;
                     }
                 }
-            }
-            else {
+            } else {
                 return null;
             }
         },
+        _getImageData: function(x, y) {
+            var width = this.hitCanvas.width || 1,
+                height = this.hitCanvas.height || 1,
+                index = (Math.round(y) * width ) + Math.round(x);
+
+            if (!this._hitImageData) {
+                this._hitImageData = this.hitCanvas.context.getImageData(0, 0, width, height);
+            }
+
+            return [
+                this._hitImageData.data[4 * index + 0] , // Red
+                this._hitImageData.data[4 * index + 1], // Green
+                this._hitImageData.data[4 * index + 2], // Blue
+                this._hitImageData.data[4 * index + 3] // Alpha
+            ];
+        },
         _getIntersection: function(pos) {
-            var p = this.hitCanvas.context._context.getImageData(pos.x, pos.y, 1, 1).data,
+            var p = this.hitCanvas.context.getImageData(pos.x, pos.y, 1, 1).data,
                 p3 = p[3],
                 colorKey, shape;
 
@@ -96,7 +130,7 @@
                 return {};
             }
         },
-        drawScene: function(can) {
+        drawScene: function(can, top) {
             var layer = this.getLayer(),
                 canvas = can || (layer && layer.getCanvas());
 
@@ -108,7 +142,7 @@
                 canvas.getContext().clear();
             }
             
-            Kinetic.Container.prototype.drawScene.call(this, canvas);
+            Kinetic.Container.prototype.drawScene.call(this, canvas, top);
 
             this._fire(DRAW, {
                 node: this
@@ -116,7 +150,14 @@
 
             return this;
         },
-        drawHit: function(can) {
+        // the apply transform method is handled by the Layer and FastLayer class
+        // because it is up to the layer to decide if an absolute or relative transform
+        // should be used
+        _applyTransform: function(shape, context, top) {
+            var m = shape.getAbsoluteTransform(top).getMatrix();
+            context.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+        },
+        drawHit: function(can, top) {
             var layer = this.getLayer(),
                 canvas = can || (layer && layer.hitCanvas);
 
@@ -124,52 +165,27 @@
                 layer.getHitCanvas().getContext().clear();
             }
 
-            Kinetic.Container.prototype.drawHit.call(this, canvas);
+            Kinetic.Container.prototype.drawHit.call(this, canvas, top);
+            this.imageData = null; // Clear imageData cache
             return this;
-        },
-        /**
-         * get layer canvas
-         * @method
-         * @memberof Kinetic.Layer.prototype
-         */
-        getCanvas: function() {
-            return this.canvas;
-        },
-        /**
-         * get layer hit canvas
-         * @method
-         * @memberof Kinetic.Layer.prototype
-         */
-        getHitCanvas: function() {
-            return this.hitCanvas;
-        },
-        /**
-         * get layer canvas context
-         * @method
-         * @memberof Kinetic.Layer.prototype
-         */
-        getContext: function() {
-            return this.getCanvas().getContext();
         },
         /**
          * clear scene and hit canvas contexts tied to the layer
          * @method
-         * @memberof Kinetic.Node.prototype
+         * @memberof Kinetic.Layer.prototype
          * @param {Object} [bounds]
          * @param {Number} [bounds.x]
          * @param {Number} [bounds.y]
          * @param {Number} [bounds.width]
          * @param {Number} [bounds.height]
          * @example
-         * layer.clear();<br>
+         * layer.clear();
          * layer.clear(0, 0, 100, 100);
          */
         clear: function(bounds) {
-            var context = this.getContext(),
-                hitContext = this.getHitCanvas().getContext();
-
-            context.clear(bounds);
-            hitContext.clear(bounds);
+            this.getContext().clear(bounds);
+            this.getHitCanvas().getContext().clear(bounds);
+            this.imageData = null; // Clear getImageData cache
             return this;
         },
         // extend Node.prototype.setVisible
@@ -185,93 +201,12 @@
             }
             return this;
         },
-        // extend Node.prototype.setZIndex
-        setZIndex: function(index) {
-            Kinetic.Node.prototype.setZIndex.call(this, index);
-            var stage = this.getStage();
-            if(stage) {
-                stage.content.removeChild(this.getCanvas()._canvas);
-
-                if(index < stage.getChildren().length - 1) {
-                    stage.content.insertBefore(this.getCanvas()._canvas, stage.getChildren()[index + 1].getCanvas()._canvas);
-                }
-                else {
-                    stage.content.appendChild(this.getCanvas()._canvas);
-                }
-            }
-            return this;
-        },
-        // extend Node.prototype.moveToTop
-        moveToTop: function() {
-            Kinetic.Node.prototype.moveToTop.call(this);
-            var stage = this.getStage();
-            if(stage) {
-                stage.content.removeChild(this.getCanvas()._canvas);
-                stage.content.appendChild(this.getCanvas()._canvas);
-            }
-        },
-        // extend Node.prototype.moveUp
-        moveUp: function() {
-            if(Kinetic.Node.prototype.moveUp.call(this)) {
-                var stage = this.getStage();
-                if(stage) {
-                    stage.content.removeChild(this.getCanvas()._canvas);
-
-                    if(this.index < stage.getChildren().length - 1) {
-                        stage.content.insertBefore(this.getCanvas()._canvas, stage.getChildren()[this.index + 1].getCanvas()._canvas);
-                    }
-                    else {
-                        stage.content.appendChild(this.getCanvas()._canvas);
-                    }
-                }
-            }
-        },
-        // extend Node.prototype.moveDown
-        moveDown: function() {
-            if(Kinetic.Node.prototype.moveDown.call(this)) {
-                var stage = this.getStage();
-                if(stage) {
-                    var children = stage.getChildren();
-                    stage.content.removeChild(this.getCanvas()._canvas);
-                    stage.content.insertBefore(this.getCanvas()._canvas, children[this.index + 1].getCanvas()._canvas);
-                }
-            }
-        },
-        // extend Node.prototype.moveToBottom
-        moveToBottom: function() {
-            if(Kinetic.Node.prototype.moveToBottom.call(this)) {
-                var stage = this.getStage();
-                if(stage) {
-                    var children = stage.getChildren();
-                    stage.content.removeChild(this.getCanvas()._canvas);
-                    stage.content.insertBefore(this.getCanvas()._canvas, children[1].getCanvas()._canvas);
-                }
-            }
-        },
-        getLayer: function() {
-            return this;
-        },
-        remove: function() {
-            var stage = this.getStage(), 
-                canvas = this.getCanvas(), 
-                _canvas = canvas._canvas;
-
-            Kinetic.Node.prototype.remove.call(this);
-
-            if(stage && _canvas && Kinetic.Util._isInDocument(_canvas)) {
-                stage.content.removeChild(_canvas);
-            }
-            return this;
-        },
-        getStage: function() {
-            return this.parent;
-        },
         /**
          * enable hit graph
          * @name enableHitGraph
          * @method
          * @memberof Kinetic.Layer.prototype
-         * @returns {Node}
+         * @returns {Layer}
          */
         enableHitGraph: function() {
             this.setHitGraphEnabled(true);
@@ -279,38 +214,21 @@
         },
         /**
          * disable hit graph
-         * @name enableHitGraph
+         * @name disableHitGraph
          * @method
          * @memberof Kinetic.Layer.prototype
-         * @returns {Node}
+         * @returns {Layer}
          */
         disableHitGraph: function() {
             this.setHitGraphEnabled(false);
             return this;
+        },
+        setSize : function(width, height) {
+            Kinetic.BaseLayer.prototype.setSize.call(this, width, height);
+            this.hitCanvas.setSize(width, height);
         }
     });
-    Kinetic.Util.extend(Kinetic.Layer, Kinetic.Container);
-
-    // add getters and setters
-    Kinetic.Factory.addGetterSetter(Kinetic.Layer, 'clearBeforeDraw', true);
-    /**
-     * get/set clearBeforeDraw flag which determines if the layer is cleared or not
-     *  before drawing
-     * @name clearBeforeDraw
-     * @method
-     * @memberof Kinetic.Layer.prototype
-     * @param {Boolean} clearBeforeDraw
-     * @returns {Boolean}
-     * @example
-     * // get clearBeforeDraw flag<br>
-     * var clearBeforeDraw = layer.clearBeforeDraw();<br><br>
-     *
-     * // disable clear before draw<br>
-     * layer.clearBeforeDraw(false);<br><br>
-     *
-     * // enable clear before draw<br>
-     * layer.clearBeforeDraw(true);
-     */
+    Kinetic.Util.extend(Kinetic.Layer, Kinetic.BaseLayer);
 
     Kinetic.Factory.addGetterSetter(Kinetic.Layer, 'hitGraphEnabled', true);
     /**
@@ -323,15 +241,14 @@
      * @param {Boolean} enabled
      * @returns {Boolean}
      * @example
-     * // get hitGraphEnabled flag<br>
-     * var hitGraphEnabled = layer.hitGraphEnabled();<br><br>
+     * // get hitGraphEnabled flag
+     * var hitGraphEnabled = layer.hitGraphEnabled();
      *
-     * // disable hit graph<br>
-     * layer.hitGraphEnabled(false);<br><br>
+     * // disable hit graph
+     * layer.hitGraphEnabled(false);
      *
-     * // enable hit graph<br>
+     * // enable hit graph
      * layer.hitGraphEnabled(true);
      */
-
-     Kinetic.Collection.mapMethods(Kinetic.Layer);
+    Kinetic.Collection.mapMethods(Kinetic.Layer);
 })();

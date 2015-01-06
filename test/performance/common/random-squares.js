@@ -1,5 +1,3 @@
-      console.log('test')
-
       var stage;
       var circlesLayer;
       var circles;
@@ -7,9 +5,9 @@
       var width = 500;
       var height = 300;
 
-      var VERSION = Kinetic.version === '4.7.4' || Kinetic.version === 'dev' ? 'new' : 'old';
+      var VERSION = Kinetic.version === 'dev' ? 'new' : 'old';
 
-      window.requestAnimFrame = (function(callback){
+      window.requestAnimFrame = (function(){
         return window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         window.mozRequestAnimationFrame ||
@@ -46,7 +44,7 @@
               colorIndex = 0;
             }
 
-            var shape = make_shape('red');
+            var shape = make_shape(color);
             circlesLayer.add(shape);
             circles.push(shape);
           }());
@@ -66,14 +64,11 @@
           var period = timeDiff/1000; //times per second, our period
 
           for (var i = 0; i < circles.length; i++) {
-            var x = Math.random() * width;
-            var y = Math.random() * height;
-            if (VERSION === 'new') {
-            circles[i].position({x: x, y: y});
-            }
-            else {
-              circles[i].setPosition(x, y);
-            }
+            var x = Math.round(Math.random() * width);
+            var y = Math.round(Math.random() * height);
+
+            circles[i].setPosition({x: x, y: y});
+
           }
           lastTime = time;
 
@@ -85,55 +80,26 @@
       }
 
       function make_shape(color) {
-        if (VERSION === 'new') {
-     
-          return new Kinetic.Rect({
-            fill: color,
-            width: 10,
-            height: 10,
-            transformsEnabled: false
-          });
-      
- 
-    
-          // return new Kinetic.Shape({
-          //   drawFunc: function(context) {
-          //     var _context = context._context;
-          //     _context.beginPath();
-          //     _context.rect(0, 0, 10, 10);
-          //     _context.closePath();
-          //     _context.fillStyle = 'red';
-          //     _context.fill();
-          //   }
-          // });
-   
-     
-        } else {
-          return new Kinetic.Shape(function(){
-                var context = this.getContext();
-                
-                context.beginPath();
-                context.rect(0, 0, 10, 10);
-                context.fillStyle = 'red';
-                context.fill();
-                context.closePath();
-            });
-        }
+        return new Kinetic.Rect({
+          fill: color,
+          width: 10,
+          height: 10
+        });
       }
 
       function make_stage() {
+        stage = new Kinetic.Stage({
+          container: "container",
+          width: width,
+          height: height
+        });
+
         if (VERSION === 'new') {
-          stage = new Kinetic.Stage({
-            container: "container",
-            width: width,
-            height: height,
-            nestedTransformsEnabled: false
-          });
-          circlesLayer = new Kinetic.Layer({
-            hitGraphEnabled: false
-          });
-        } else {
-          stage = new Kinetic.Stage("container", width, height);
+          console.log('create fast layer')
+          circlesLayer = new Kinetic.FastLayer();
+        } 
+        else {
+          console.log('create normal layer')
           circlesLayer = new Kinetic.Layer();
         }
       }

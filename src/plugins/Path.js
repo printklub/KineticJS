@@ -10,12 +10,12 @@
      * @@shapeParams
      * @@nodeParams
      * @example
-     * var path = new Kinetic.Path({<br>
-     *   x: 240,<br>
-     *   y: 40,<br>
-     *   data: 'M12.582,9.551C3.251,16.237,0.921,29.021,7.08,38.564l-2.36,1.689l4.893,2.262l4.893,2.262l-0.568-5.36l-0.567-5.359l-2.365,1.694c-4.657-7.375-2.83-17.185,4.352-22.33c7.451-5.338,17.817-3.625,23.156,3.824c5.337,7.449,3.625,17.813-3.821,23.152l2.857,3.988c9.617-6.893,11.827-20.277,4.935-29.896C35.591,4.87,22.204,2.658,12.582,9.551z',<br>
-     *   fill: 'green',<br>
-     *   scale: 2<br>
+     * var path = new Kinetic.Path({
+     *   x: 240,
+     *   y: 40,
+     *   data: 'M12.582,9.551C3.251,16.237,0.921,29.021,7.08,38.564l-2.36,1.689l4.893,2.262l4.893,2.262l-0.568-5.36l-0.567-5.359l-2.365,1.694c-4.657-7.375-2.83-17.185,4.352-22.33c7.451-5.338,17.817-3.625,23.156,3.824c5.337,7.449,3.625,17.813-3.821,23.152l2.857,3.988c9.617-6.893,11.827-20.277,4.935-29.896C35.591,4.87,22.204,2.658,12.582,9.551z',
+     *   fill: 'green',
+     *   scale: 2
      * });
      */
     Kinetic.Path = function (config) {
@@ -106,8 +106,9 @@
 
         var m = (P2y - P1y) / ((P2x - P1x) + 0.00000001);
         var run = Math.sqrt(dist * dist / (1 + m * m));
-        if(P2x < P1x)
+        if(P2x < P1x) {
             run *= -1;
+        }
         var rise = m * run;
         var pt;
 
@@ -137,8 +138,9 @@
             var pRise = this.getLineLength(fromX, fromY, ix, iy);
             var pRun = Math.sqrt(dist * dist - pRise * pRise);
             run = Math.sqrt(pRun * pRun / (1 + m * m));
-            if(P2x < P1x)
+            if(P2x < P1x) {
                 run *= -1;
+            }
             rise = m * run;
             pt = {
                 x: ix + run,
@@ -268,8 +270,9 @@
                 p[i] = parseFloat(p[i]);
             }
             while(p.length > 0) {
-                if(isNaN(p[0]))// case for a trailing comma before next command
+                if(isNaN(p[0])) {// case for a trailing comma before next command
                     break;
+                }
 
                 var cmd = null;
                 var points = [];
@@ -360,7 +363,8 @@
                         points.push(cpx, cpy);
                         break;
                     case 'S':
-                        ctlPtx = cpx, ctlPty = cpy;
+                        ctlPtx = cpx;
+                        ctlPty = cpy;
                         prevCmd = ca[ca.length - 1];
                         if(prevCmd.command === 'C') {
                             ctlPtx = cpx + (cpx - prevCmd.points[2]);
@@ -373,7 +377,8 @@
                         points.push(cpx, cpy);
                         break;
                     case 's':
-                        ctlPtx = cpx, ctlPty = cpy;
+                        ctlPtx = cpx;
+                        ctlPty = cpy;
                         prevCmd = ca[ca.length - 1];
                         if(prevCmd.command === 'C') {
                             ctlPtx = cpx + (cpx - prevCmd.points[2]);
@@ -399,7 +404,8 @@
                         points.push(cpx, cpy);
                         break;
                     case 'T':
-                        ctlPtx = cpx, ctlPty = cpy;
+                        ctlPtx = cpx;
+                        ctlPty = cpy;
                         prevCmd = ca[ca.length - 1];
                         if(prevCmd.command === 'Q') {
                             ctlPtx = cpx + (cpx - prevCmd.points[0]);
@@ -411,7 +417,8 @@
                         points.push(ctlPtx, ctlPty, cpx, cpy);
                         break;
                     case 't':
-                        ctlPtx = cpx, ctlPty = cpy;
+                        ctlPtx = cpx;
+                        ctlPty = cpy;
                         prevCmd = ca[ca.length - 1];
                         if(prevCmd.command === 'Q') {
                             ctlPtx = cpx + (cpx - prevCmd.points[0]);
@@ -423,14 +430,27 @@
                         points.push(ctlPtx, ctlPty, cpx, cpy);
                         break;
                     case 'A':
-                        rx = p.shift(), ry = p.shift(), psi = p.shift(), fa = p.shift(), fs = p.shift();
-                        x1 = cpx, y1 = cpy; cpx = p.shift(), cpy = p.shift();
+                        rx = p.shift();
+                        ry = p.shift();
+                        psi = p.shift();
+                        fa = p.shift();
+                        fs = p.shift();
+                        x1 = cpx;
+                        y1 = cpy;
+                        cpx = p.shift();
+                        cpy = p.shift();
                         cmd = 'A';
                         points = this.convertEndpointToCenterParameterization(x1, y1, cpx, cpy, fa, fs, rx, ry, psi);
                         break;
                     case 'a':
-                        rx = p.shift(), ry = p.shift(), psi = p.shift(), fa = p.shift(), fs = p.shift();
-                        x1 = cpx, y1 = cpy; cpx += p.shift(), cpy += p.shift();
+                        rx = p.shift();
+                        ry = p.shift();
+                        psi = p.shift();
+                        fa = p.shift();
+                        fs = p.shift();
+                        x1 = cpx;
+                        y1 = cpy; cpx += p.shift();
+                        cpy += p.shift();
                         cmd = 'A';
                         points = this.convertEndpointToCenterParameterization(x1, y1, cpx, cpy, fa, fs, rx, ry, psi);
                         break;
@@ -460,7 +480,7 @@
         return ca;
     };
     Kinetic.Path.calcLength = function(x, y, cmd, points) {
-        var len, p1, p2;
+        var len, p1, p2, t;
         var path = Kinetic.Path;
 
         switch (cmd) {
@@ -538,7 +558,7 @@
 
         var f = Math.sqrt((((rx * rx) * (ry * ry)) - ((rx * rx) * (yp * yp)) - ((ry * ry) * (xp * xp))) / ((rx * rx) * (yp * yp) + (ry * ry) * (xp * xp)));
 
-        if(fa == fs) {
+        if(fa === fs) {
             f *= -1;
         }
         if(isNaN(f)) {
@@ -574,7 +594,7 @@
         if(fs === 0 && dTheta > 0) {
             dTheta = dTheta - 2 * Math.PI;
         }
-        if(fs == 1 && dTheta < 0) {
+        if(fs === 1 && dTheta < 0) {
             dTheta = dTheta + 2 * Math.PI;
         }
         return [cx, cy, rx, ry, theta, dTheta, psi, fs];
@@ -600,5 +620,5 @@
      * @memberof Kinetic.Path.prototype
      */
 
-     Kinetic.Collection.mapMethods(Kinetic.Path);
+    Kinetic.Collection.mapMethods(Kinetic.Path);
 })();

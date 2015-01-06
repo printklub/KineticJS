@@ -1,4 +1,5 @@
 mocha.ui('tdd');
+mocha.setup("bdd");
 var assert = chai.assert,
     kineticContainer = document.getElementById('kinetic-container'),
     origAssertEqual = assert.equal,
@@ -57,6 +58,7 @@ function init() {
 
 
 Kinetic.enableTrace = true;
+Kinetic.showWarnings = false;
 
 function addStats() {
     stats = new Stats();

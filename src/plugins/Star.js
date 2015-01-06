@@ -11,15 +11,15 @@
      * @@shapeParams
      * @@nodeParams
      * @example
-     * var star = new Kinetic.Star({<br>
-     *   x: 100,<br>
-     *   y: 200,<br>
-     *   numPoints: 5,<br>
-     *   innerRadius: 70,<br>
-     *   outerRadius: 70,<br>
-     *   fill: 'red',<br>
-     *   stroke: 'black',<br>
-     *   strokeWidth: 4<br>
+     * var star = new Kinetic.Star({
+     *   x: 100,
+     *   y: 200,
+     *   numPoints: 5,
+     *   innerRadius: 70,
+     *   outerRadius: 70,
+     *   fill: 'red',
+     *   stroke: 'black',
+     *   strokeWidth: 4
      * });
      */
     Kinetic.Star = function(config) {
@@ -34,8 +34,8 @@
             this.sceneFunc(this._sceneFunc);
         },
         _sceneFunc: function(context) {
-            var innerRadius = this.innerRadius(), 
-                outerRadius = this.outerRadius(), 
+            var innerRadius = this.innerRadius(),
+                outerRadius = this.outerRadius(),
                 numPoints = this.numPoints();
 
             context.beginPath();
@@ -106,5 +106,5 @@
      * @memberof Kinetic.Star.prototype
      */
 
-     Kinetic.Collection.mapMethods(Kinetic.Star);
+    Kinetic.Collection.mapMethods(Kinetic.Star);
 })();

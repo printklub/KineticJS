@@ -21,34 +21,41 @@
      * @memberof Kinetic
      * @example
      * // instantiate new tween which fully rotates a node in 1 second
-     * var tween = new Kinetic.Tween({<br>
-     *   node: node,<br>
-     *   rotationDeg: 360,<br>
-     *   duration: 1,<br>
-     *   easing: Kinetic.Easings.EaseInOut<br>
-     * });<br><br>
+     * var tween = new Kinetic.Tween({
+     *   node: node,
+     *   rotationDeg: 360,
+     *   duration: 1,
+     *   easing: Kinetic.Easings.EaseInOut
+     * });
      *
-     * // play tween<br>
-     * tween.play();<br><br>
+     * // play tween
+     * tween.play();
      *
-     * // pause tween<br>
+     * // pause tween
      * tween.pause();
      */
     Kinetic.Tween = function(config) {
         var that = this,
             node = config.node,
             nodeId = node._id,
-            duration = config.duration || 1,
+            duration,
             easing = config.easing || Kinetic.Easings.Linear,
             yoyo = !!config.yoyo,
-            key, tween, start, tweenId;
+            key;
 
+        if (typeof config.duration === 'undefined') {
+            duration = 1;
+        } else if (config.duration === 0) {  // zero is bad value for duration
+            duration = 0.001;
+        } else {
+            duration = config.duration;
+        }
         this.node = node;
         this._id = idCounter++;
 
         this.anim = new Kinetic.Animation(function() {
             that.tween.onEnterFrame();
-        }, node.getLayer() || node.getLayers());
+        }, node.getLayer() || ((node instanceof Kinetic.Stage) ? node.getLayers() : null));
 
         this.tween = new Tween(key, function(i) {
             that._tweenFunc(i);
@@ -90,7 +97,7 @@
         _addAttr: function(key, end) {
             var node = this.node,
                 nodeId = node._id,
-                start, diff, tweenId, n, len, startVal, endVal;
+                start, diff, tweenId, n, len;
 
             // remove conflict from tween map if it exists
             tweenId = Kinetic.Tween.tweens[nodeId][key];
@@ -123,7 +130,7 @@
         _tweenFunc: function(i) {
             var node = this.node,
                 attrs = Kinetic.Tween.attrs[node._id][this._id],
-                key, attr, start, diff, newVal, n, len, startVal, diffVal;
+                key, attr, start, diff, newVal, n, len;
 
             for (key in attrs) {
                 attr = attrs[key];
@@ -197,9 +204,7 @@
          * @returns {Tween}
          */
         reset: function() {
-            var node = this.node;
             this.tween.reset();
-            (node.getLayer() || node.getLayers()).draw();
             return this;
         },
         /**
@@ -210,9 +215,7 @@
          * @returns {Tween}
          */
         seek: function(t) {
-            var node = this.node;
             this.tween.seek(t * 1000);
-            (node.getLayer() || node.getLayers()).draw();
             return this;
         },
         /**
@@ -232,9 +235,7 @@
          * @returns {Tween}
          */
         finish: function() {
-            var node = this.node;
             this.tween.finish();
-            (node.getLayer() || node.getLayers()).draw();
             return this;
         },
         /**
@@ -390,7 +391,7 @@
         * @function
         * @memberof Kinetic.Easings
         */
-        'BackEaseIn': function(t, b, c, d, a, p) {
+        'BackEaseIn': function(t, b, c, d) {
             var s = 1.70158;
             return c * (t /= d) * t * ((s + 1) * t - s) + b;
         },
@@ -399,7 +400,7 @@
         * @function
         * @memberof Kinetic.Easings
         */
-        'BackEaseOut': function(t, b, c, d, a, p) {
+        'BackEaseOut': function(t, b, c, d) {
             var s = 1.70158;
             return c * (( t = t / d - 1) * t * ((s + 1) * t + s) + 1) + b;
         },
@@ -408,7 +409,7 @@
         * @function
         * @memberof Kinetic.Easings
         */
-        'BackEaseInOut': function(t, b, c, d, a, p) {
+        'BackEaseInOut': function(t, b, c, d) {
             var s = 1.70158;
             if((t /= d / 2) < 1) {
                 return c / 2 * (t * t * (((s *= (1.525)) + 1) * t - s)) + b;
